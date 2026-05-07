@@ -1,26 +1,106 @@
 const MONTHS_BACK = 24;
 
+// --- i18n ---
+const i18n = {
+  zh: {
+    tabMonthly: '月度',
+    tabDaily: '天维度',
+    loading: '加载中...',
+    thModel: '模型',
+    thTokens: 'Tokens',
+    thRequests: '请求数',
+    total: '合计',
+    dateSep: '至',
+    queryBtn: '查询',
+    selectDateRange: '请选择日期范围',
+    noData: '所选日期范围内无数据',
+    openCursorFirst: '请先打开 cursor.com 页面后再使用此插件',
+    requestFailed: '请求失败',
+    currentMonth: '（当前）',
+    tierLabel: 'Pro 计划包含',
+  },
+  en: {
+    tabMonthly: 'Monthly',
+    tabDaily: 'Daily',
+    loading: 'Loading...',
+    thModel: 'Model',
+    thTokens: 'Tokens',
+    thRequests: 'Requests',
+    total: 'Total',
+    dateSep: 'to',
+    queryBtn: 'Query',
+    selectDateRange: 'Please select a date range',
+    noData: 'No data for the selected date range',
+    openCursorFirst: 'Please open cursor.com before using this extension',
+    requestFailed: 'Request failed',
+    currentMonth: '(current)',
+    tierLabel: 'Pro plan includes',
+  }
+};
+
+let currentLocale = 'zh';
+
+function getLocale() {
+  const stored = localStorage.getItem('locale');
+  if (stored) return stored;
+  return navigator.language.startsWith('zh') ? 'zh' : 'en';
+}
+
+function setLocale(locale) {
+  currentLocale = locale;
+  localStorage.setItem('locale', locale);
+}
+
+function t(key) {
+  return i18n[currentLocale][key] || key;
+}
+
+// --- State ---
 let currentBillingStart = null;
 let dailyLoaded = false;
 
 // --- Utility Functions ---
-function formatTokensCN(num) {
-  if (num >= 100000000) {
-    const yi = num / 100000000;
-    const formatted = yi.toFixed(1);
-    return (formatted.endsWith('.0') ? formatted.slice(0, -2) : formatted) + '亿';
+function formatTokens(num) {
+  if (currentLocale === 'zh') {
+    if (num >= 100000000) {
+      const yi = num / 100000000;
+      const formatted = yi.toFixed(1);
+      return (formatted.endsWith('.0') ? formatted.slice(0, -2) : formatted) + '亿';
+    }
+    if (num >= 10000) {
+      const wan = num / 10000;
+      const formatted = wan.toFixed(1);
+      return (formatted.endsWith('.0') ? formatted.slice(0, -2) : formatted) + '万';
+    }
+    return num.toString();
+  } else {
+    if (num >= 1000000000) {
+      const b = num / 1000000000;
+      const formatted = b.toFixed(1);
+      return (formatted.endsWith('.0') ? formatted.slice(0, -2) : formatted) + 'B';
+    }
+    if (num >= 1000000) {
+      const m = num / 1000000;
+      const formatted = m.toFixed(1);
+      return (formatted.endsWith('.0') ? formatted.slice(0, -2) : formatted) + 'M';
+    }
+    if (num >= 1000) {
+      const k = num / 1000;
+      const formatted = k.toFixed(1);
+      return (formatted.endsWith('.0') ? formatted.slice(0, -2) : formatted) + 'K';
+    }
+    return num.toString();
   }
-  if (num >= 10000) {
-    const wan = num / 10000;
-    const formatted = wan.toFixed(1);
-    return (formatted.endsWith('.0') ? formatted.slice(0, -2) : formatted) + '万';
-  }
-  return num.toString();
 }
 
-function formatDateCN(dateStr) {
+function formatDate(dateStr) {
   const d = new Date(dateStr);
-  return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
+  if (currentLocale === 'zh') {
+    return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
+  } else {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+  }
 }
 
 function subtractMonths(date, months) {
@@ -60,11 +140,10 @@ function calcModelTotalTokens(agg) {
 // --- API Fetch Functions ---
 async function findCursorTab() {
   const tabs = await chrome.tabs.query({ url: '*://cursor.com/*' });
-  if (tabs.length === 0) throw new Error('请先打开 cursor.com 页面后再使用此插件');
+  if (tabs.length === 0) throw new Error(t('openCursorFirst'));
   return tabs[0];
 }
 
-// Monthly: aggregated usage API
 async function fetchAggregatedUsage(startDateMs) {
   const tab = await findCursorTab();
   const results = await chrome.scripting.executeScript({
@@ -86,7 +165,6 @@ async function fetchAggregatedUsage(startDateMs) {
   return results[0].result;
 }
 
-// Monthly: billing cycle API
 async function fetchBillingCycle() {
   const tab = await findCursorTab();
   const results = await chrome.scripting.executeScript({
@@ -102,7 +180,6 @@ async function fetchBillingCycle() {
   return results[0].result;
 }
 
-// Daily: filtered events API (handles pagination internally)
 async function fetchFilteredEvents(startDate, endDate) {
   const tab = await findCursorTab();
   const results = await chrome.scripting.executeScript({
@@ -136,7 +213,6 @@ async function fetchFilteredEvents(startDate, endDate) {
 }
 
 // --- Data Processing ---
-// Subtract next cycle data from this cycle data to get single-month data
 function subtractUsageData(thisData, nextData) {
   const aggregations = [];
   const nextMap = {};
@@ -173,7 +249,6 @@ function subtractUsageData(thisData, nextData) {
   };
 }
 
-// Aggregate daily events into same format as monthly API
 function aggregateEventsByModel(events) {
   const modelMap = {};
   let totalInputTokens = 0;
@@ -227,13 +302,11 @@ function aggregateEventsByModel(events) {
 }
 
 // --- Rendering ---
-function renderTable(panel, usageData, isSubtracted) {
+function renderTable(panel, usageData) {
   const tbody = document.getElementById(`${panel}-body`);
   const tfoot = document.getElementById(`${panel}-foot`);
   const tierLabel = document.getElementById(`${panel}-tier-label`);
   const table = document.getElementById(`${panel}-table`);
-  const debugToggle = document.getElementById(`${panel}-debug-toggle`);
-  const debugJson = document.getElementById(`${panel}-debug-json`);
 
   tbody.innerHTML = '';
   tfoot.innerHTML = '';
@@ -248,7 +321,7 @@ function renderTable(panel, usageData, isSubtracted) {
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td class="model-name">${agg.modelIntent}</td>
-      <td>${formatTokensCN(totalTokens)}</td>
+      <td>${formatTokens(totalTokens)}</td>
       <td>${requests}</td>
     `;
     tbody.appendChild(tr);
@@ -262,16 +335,13 @@ function renderTable(panel, usageData, isSubtracted) {
 
   const footTr = document.createElement('tr');
   footTr.innerHTML = `
-    <td>合计</td>
-    <td>${formatTokensCN(totalTokens)}</td>
+    <td>${t('total')}</td>
+    <td>${formatTokens(totalTokens)}</td>
     <td>${totalRequests}</td>
   `;
   tfoot.appendChild(footTr);
 
-  const label = isSubtracted ? '差值计算（单月）' : '原始数据';
-  debugToggle.style.display = 'block';
-  debugJson.textContent = `// ${label}\n` + JSON.stringify(usageData, null, 2);
-
+  tierLabel.textContent = t('tierLabel');
   tierLabel.style.display = 'block';
   table.style.display = 'table';
 }
@@ -283,13 +353,12 @@ function buildMonthSelector(billingStart) {
 
   for (let i = 0; i <= MONTHS_BACK; i++) {
     const start = new Date(subtractMonths(billingStart, i));
-
     const end = new Date(addMonths(start.toISOString(), 1));
-    const label = `${formatDateCN(start.toISOString())} - ${formatDateCN(end.toISOString())}`;
+    const label = `${formatDate(start.toISOString())} - ${formatDate(end.toISOString())}`;
     const option = document.createElement('option');
     option.value = start.getTime();
     option.textContent = label;
-    if (i === 0) option.textContent = label + '（当前）';
+    if (i === 0) option.textContent = label + ' ' + t('currentMonth');
     select.appendChild(option);
   }
 }
@@ -299,15 +368,12 @@ async function loadMonthlyUsage(startDateMs) {
   const errorEl = document.getElementById('monthly-error');
   const tableEl = document.getElementById('monthly-table');
   const tierLabelEl = document.getElementById('monthly-tier-label');
-  const debugToggle = document.getElementById('monthly-debug-toggle');
-  const debugJson = document.getElementById('monthly-debug-json');
 
+  loadingEl.textContent = t('loading');
   loadingEl.style.display = 'block';
   errorEl.style.display = 'none';
   tableEl.style.display = 'none';
   tierLabelEl.style.display = 'none';
-  debugToggle.style.display = 'none';
-  debugJson.style.display = 'none';
 
   try {
     const currentCycleMs = new Date(currentBillingStart).getTime();
@@ -315,7 +381,6 @@ async function loadMonthlyUsage(startDateMs) {
     if (data.error) throw new Error(data.error);
 
     let usageData = data.usageData;
-    let isSubtracted = false;
 
     if (startDateMs !== currentCycleMs) {
       const cycleDuration = currentCycleMs - new Date(subtractMonths(currentBillingStart, 1)).getTime();
@@ -323,11 +388,10 @@ async function loadMonthlyUsage(startDateMs) {
       const nextData = await fetchAggregatedUsage(nextCycleMs);
       if (!nextData.error) {
         usageData = subtractUsageData(data.usageData, nextData.usageData);
-        isSubtracted = true;
       }
     }
 
-    renderTable('monthly', usageData, isSubtracted);
+    renderTable('monthly', usageData);
   } catch (err) {
     errorEl.textContent = err.message;
     errorEl.style.display = 'block';
@@ -342,8 +406,9 @@ async function loadDailyData() {
   const endDateStr = document.getElementById('daily-end').value;
 
   if (!startDateStr || !endDateStr) {
-    document.getElementById('daily-error').textContent = '请选择日期范围';
-    document.getElementById('daily-error').style.display = 'block';
+    const errorEl = document.getElementById('daily-error');
+    errorEl.textContent = t('selectDateRange');
+    errorEl.style.display = 'block';
     return;
   }
 
@@ -351,15 +416,12 @@ async function loadDailyData() {
   const errorEl = document.getElementById('daily-error');
   const tableEl = document.getElementById('daily-table');
   const tierLabelEl = document.getElementById('daily-tier-label');
-  const debugToggle = document.getElementById('daily-debug-toggle');
-  const debugJson = document.getElementById('daily-debug-json');
 
+  loadingEl.textContent = t('loading');
   loadingEl.style.display = 'block';
   errorEl.style.display = 'none';
   tableEl.style.display = 'none';
   tierLabelEl.style.display = 'none';
-  debugToggle.style.display = 'none';
-  debugJson.style.display = 'none';
 
   try {
     const startTs = dateToStartTimestamp(startDateStr);
@@ -370,14 +432,14 @@ async function loadDailyData() {
 
     const events = data.events || [];
     if (events.length === 0) {
-      errorEl.textContent = '所选日期范围内无数据';
+      errorEl.textContent = t('noData');
       errorEl.style.display = 'block';
       loadingEl.style.display = 'none';
       return;
     }
 
     const usageData = aggregateEventsByModel(events);
-    renderTable('daily', usageData, false);
+    renderTable('daily', usageData);
   } catch (err) {
     errorEl.textContent = err.message;
     errorEl.style.display = 'block';
@@ -385,6 +447,43 @@ async function loadDailyData() {
     loadingEl.style.display = 'none';
   }
 }
+
+// --- Language Toggle & Re-render ---
+function renderAll() {
+  document.documentElement.lang = currentLocale === 'zh' ? 'zh-CN' : 'en';
+
+  // Update language toggle button label
+  const langBtn = document.getElementById('lang-toggle');
+  langBtn.textContent = currentLocale === 'zh' ? 'EN' : '中';
+
+  // Update all data-i18n elements
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    el.textContent = t(el.getAttribute('data-i18n'));
+  });
+
+  // Re-build month selector
+  if (currentBillingStart) {
+    buildMonthSelector(currentBillingStart);
+  }
+
+  // Re-render current monthly data if table is visible
+  if (currentBillingStart) {
+    const monthSelect = document.getElementById('month-select');
+    if (monthSelect.value) {
+      loadMonthlyUsage(parseInt(monthSelect.value));
+    }
+  }
+
+  // Re-load daily if it was loaded
+  if (dailyLoaded) {
+    loadDailyData();
+  }
+}
+
+document.getElementById('lang-toggle').addEventListener('click', () => {
+  setLocale(currentLocale === 'zh' ? 'en' : 'zh');
+  renderAll();
+});
 
 // --- Tab Switching ---
 document.querySelectorAll('.tab').forEach(btn => {
@@ -405,37 +504,26 @@ document.querySelectorAll('.tab').forEach(btn => {
 
 document.getElementById('daily-query').addEventListener('click', loadDailyData);
 
-// --- Debug Toggles ---
-function setupDebugToggle(panel) {
-  document.getElementById(`${panel}-debug-toggle`).addEventListener('click', () => {
-    const json = document.getElementById(`${panel}-debug-json`);
-    const toggle = document.getElementById(`${panel}-debug-toggle`);
-    if (json.style.display === 'none') {
-      json.style.display = 'block';
-      toggle.textContent = '原始数据 ▲';
-    } else {
-      json.style.display = 'none';
-      toggle.textContent = '原始数据 ▼';
-    }
-  });
-}
-
-setupDebugToggle('monthly');
-setupDebugToggle('daily');
-
 document.getElementById('month-select').addEventListener('change', (e) => {
   loadMonthlyUsage(parseInt(e.target.value));
 });
 
 // --- Init ---
 async function init() {
+  setLocale(getLocale());
+  document.documentElement.lang = currentLocale === 'zh' ? 'zh-CN' : 'en';
+
   const loadingEl = document.getElementById('monthly-loading');
   const errorEl = document.getElementById('monthly-error');
   const cycleInfoEl = document.getElementById('cycle-info');
 
+  loadingEl.textContent = t('loading');
   loadingEl.style.display = 'block';
   errorEl.style.display = 'none';
   cycleInfoEl.textContent = '';
+
+  // Apply i18n to static elements
+  renderAll();
 
   // Default daily dates to today
   const today = getTodayStr();
@@ -447,7 +535,7 @@ async function init() {
     if (summaryData.error) throw new Error(summaryData.error);
 
     currentBillingStart = summaryData.billingCycleStart;
-    cycleInfoEl.textContent = `${formatDateCN(summaryData.billingCycleStart)} - ${formatDateCN(summaryData.billingCycleEnd)}`;
+    cycleInfoEl.textContent = `${formatDate(summaryData.billingCycleStart)} - ${formatDate(summaryData.billingCycleEnd)}`;
 
     buildMonthSelector(summaryData.billingCycleStart);
     await loadMonthlyUsage(new Date(summaryData.billingCycleStart).getTime());
