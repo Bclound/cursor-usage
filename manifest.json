@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Cursor Usage Viewer",
   "version": "1.0",
-  "description": "查看 Cursor 各模型用量统计",
+  "description": "查看 Cursor 各模型用量统计 / View Cursor per-model usage statistics",
   "permissions": ["storage", "scripting", "tabs"],
   "host_permissions": ["*://cursor.com/*"],
   "action": {
