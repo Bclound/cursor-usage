@@ -11,6 +11,12 @@ Chrome 浏览器扩展，查看 Cursor 各 AI 模型的用量统计。支持月�
 - 表格展示：与官方格式一致的模型 / Tokens / 请求数表格
 - 差值计算：自动处理 API 返回的累积数据，精确展示单月用量
 
+![](./assets/image.png)
+
+![](./assets/image2.png)
+
+![](./assets/image3.png)
+
 ## 安装
 
 1. 下载或克隆本项目

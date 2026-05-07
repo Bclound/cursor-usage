@@ -10,6 +10,12 @@ A Chrome extension for viewing per-model AI usage statistics on Cursor. Supports
 - Daily view: select any date range for per-day usage details (defaults to today)
 - Table display: model / tokens / requests matching the official format
 - Delta calculation: handles cumulative API data to show accurate single-month usage
+  
+![](./assets/image.png)
+
+![](./assets/image2.png)
+
+![](./assets/image3.png)
 
 ## Installation
 
