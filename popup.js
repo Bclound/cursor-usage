@@ -175,7 +175,7 @@ async function fetchBillingCycle() {
     func: async () => {
       try {
         const resp = await fetch('https://cursor.com/api/usage-summary', { credentials: 'include' });
-        if (!resp.ok) return { errorStatus: resp.status, endpoint: 'usage-summary' };
+        if (!resp.ok) return { errorStatus: resp.status };
         return await resp.json();
       } catch (e) { return { error: e.message }; }
     }
@@ -328,11 +328,16 @@ function renderTable(panel, usageData) {
     const requests = parseInt(agg.requestCost || '0');
     if (totalTokens === 0 && requests === 0) continue;
     const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td class="model-name">${agg.modelIntent}</td>
-      <td>${formatTokens(totalTokens)}</td>
-      <td>${requests}</td>
-    `;
+    const tdModel = document.createElement('td');
+    tdModel.className = 'model-name';
+    tdModel.textContent = agg.modelIntent;
+    const tdTokens = document.createElement('td');
+    tdTokens.textContent = formatTokens(totalTokens);
+    const tdRequests = document.createElement('td');
+    tdRequests.textContent = requests;
+    tr.appendChild(tdModel);
+    tr.appendChild(tdTokens);
+    tr.appendChild(tdRequests);
     tbody.appendChild(tr);
   }
 
@@ -343,11 +348,15 @@ function renderTable(panel, usageData) {
   const totalRequests = parseInt(usageData.totalRequestCost || '0');
 
   const footTr = document.createElement('tr');
-  footTr.innerHTML = `
-    <td>${t('total')}</td>
-    <td>${formatTokens(totalTokens)}</td>
-    <td>${totalRequests}</td>
-  `;
+  const footTdLabel = document.createElement('td');
+  footTdLabel.textContent = t('total');
+  const footTdTokens = document.createElement('td');
+  footTdTokens.textContent = formatTokens(totalTokens);
+  const footTdRequests = document.createElement('td');
+  footTdRequests.textContent = totalRequests;
+  footTr.appendChild(footTdLabel);
+  footTr.appendChild(footTdTokens);
+  footTr.appendChild(footTdRequests);
   tfoot.appendChild(footTr);
 
   tierLabel.textContent = t('tierLabel');
