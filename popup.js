@@ -156,13 +156,16 @@ async function fetchAggregatedUsage(startDateMs) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ teamId: -1, startDate: startMs })
         });
-        if (!resp.ok) return { error: `请求失败: ${resp.status}` };
+        if (!resp.ok) return { errorStatus: resp.status };
         return { usageData: await resp.json() };
       } catch (e) { return { error: e.message }; }
     },
     args: [startDateMs]
   });
-  return results[0].result;
+  const result = results[0].result;
+  if (result.errorStatus) throw new Error(`${t('requestFailed')}: ${result.errorStatus}`);
+  if (result.error) throw new Error(result.error);
+  return result;
 }
 
 async function fetchBillingCycle() {
@@ -172,12 +175,15 @@ async function fetchBillingCycle() {
     func: async () => {
       try {
         const resp = await fetch('https://cursor.com/api/usage-summary', { credentials: 'include' });
-        if (!resp.ok) return { error: `usage-summary 请求失败: ${resp.status}` };
+        if (!resp.ok) return { errorStatus: resp.status, endpoint: 'usage-summary' };
         return await resp.json();
       } catch (e) { return { error: e.message }; }
     }
   });
-  return results[0].result;
+  const result = results[0].result;
+  if (result.errorStatus) throw new Error(`${t('requestFailed')}: ${result.errorStatus}`);
+  if (result.error) throw new Error(result.error);
+  return result;
 }
 
 async function fetchFilteredEvents(startDate, endDate) {
@@ -197,7 +203,7 @@ async function fetchFilteredEvents(startDate, endDate) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ teamId: 0, startDate: start, endDate: end, page, pageSize })
           });
-          if (!resp.ok) return { error: `请求失败: ${resp.status}` };
+          if (!resp.ok) return { errorStatus: resp.status };
           const data = await resp.json();
           allEvents.push(...(data.usageEventsDisplay || []));
           if (allEvents.length >= data.totalUsageEventsCount || page > 50) break;
@@ -209,7 +215,10 @@ async function fetchFilteredEvents(startDate, endDate) {
     },
     args: [startDate, endDate]
   });
-  return results[0].result;
+  const result = results[0].result;
+  if (result.errorStatus) throw new Error(`${t('requestFailed')}: ${result.errorStatus}`);
+  if (result.error) throw new Error(result.error);
+  return result;
 }
 
 // --- Data Processing ---
