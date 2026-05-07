@@ -1,51 +1,56 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html>
 <head>
   <meta charset="UTF-8">
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
   <div class="container">
-    <h1>Cursor Usage</h1>
+    <div class="header-row">
+      <h1>Cursor Usage</h1>
+      <button id="lang-toggle" class="lang-toggle">EN</button>
+    </div>
     <div class="tabs">
-      <button class="tab active" data-tab="monthly">月度</button>
-      <button class="tab" data-tab="daily">天维度</button>
+      <button class="tab active" data-tab="monthly" data-i18n="tabMonthly">月度</button>
+      <button class="tab" data-tab="daily" data-i18n="tabDaily">天维度</button>
     </div>
 
-    <!-- 月度面板 -->
     <div id="monthly-panel">
       <div id="cycle-info" class="cycle-info"></div>
       <select id="month-select" class="month-select"></select>
-      <div id="monthly-loading" class="loading">加载中...</div>
+      <div id="monthly-loading" class="loading" data-i18n="loading">加载中...</div>
       <div id="monthly-error" class="error" style="display:none"></div>
       <div id="monthly-tier-label" class="tier-label" style="display:none">Pro 计划包含</div>
       <table id="monthly-table" style="display:none">
-        <thead><tr><th>模型</th><th>Tokens</th><th>请求数</th></tr></thead>
+        <thead><tr>
+          <th data-i18n="thModel">模型</th>
+          <th data-i18n="thTokens">Tokens</th>
+          <th data-i18n="thRequests">请求数</th>
+        </tr></thead>
         <tbody id="monthly-body"></tbody>
         <tfoot id="monthly-foot"></tfoot>
       </table>
-      <div id="monthly-debug-toggle" class="debug-toggle" style="display:none">原始数据 ▼</div>
-      <pre id="monthly-debug-json" class="debug-json" style="display:none"></pre>
     </div>
 
-    <!-- 天维度面板 -->
     <div id="daily-panel" style="display:none">
       <div class="date-range">
         <input type="date" id="daily-start">
-        <span class="date-sep">至</span>
+        <span class="date-sep" data-i18n="dateSep">至</span>
         <input type="date" id="daily-end">
-        <button id="daily-query" class="query-btn">查询</button>
+        <button id="daily-query" class="query-btn" data-i18n="queryBtn">查询</button>
       </div>
-      <div id="daily-loading" class="loading" style="display:none">加载中...</div>
+      <div id="daily-loading" class="loading" style="display:none" data-i18n="loading">加载中...</div>
       <div id="daily-error" class="error" style="display:none"></div>
       <div id="daily-tier-label" class="tier-label" style="display:none">Pro 计划包含</div>
       <table id="daily-table" style="display:none">
-        <thead><tr><th>模型</th><th>Tokens</th><th>请求数</th></tr></thead>
+        <thead><tr>
+          <th data-i18n="thModel">模型</th>
+          <th data-i18n="thTokens">Tokens</th>
+          <th data-i18n="thRequests">请求数</th>
+        </tr></thead>
         <tbody id="daily-body"></tbody>
         <tfoot id="daily-foot"></tfoot>
       </table>
-      <div id="daily-debug-toggle" class="debug-toggle" style="display:none">原始数据 ▼</div>
-      <pre id="daily-debug-json" class="debug-json" style="display:none"></pre>
     </div>
   </div>
   <script src="popup.js"></script>
