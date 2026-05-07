@@ -7,19 +7,40 @@
 body {
   width: 440px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: #1a1a2e;
-  color: #e0e0e0;
+  background: #fafafa;
+  color: #333;
 }
 
 .container {
   padding: 16px;
 }
 
-h1 {
-  font-size: 16px;
-  color: #7c4dff;
+.header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 8px;
-  text-align: center;
+}
+
+h1 {
+  font-size: 15px;
+  color: #333;
+  font-weight: 600;
+}
+
+.lang-toggle {
+  font-size: 12px;
+  color: #666;
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  border-radius: 4px;
+  padding: 2px 8px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.lang-toggle:hover {
+  border-color: #999;
 }
 
 /* Tabs */
@@ -31,9 +52,9 @@ h1 {
 .tab {
   flex: 1;
   padding: 8px;
-  background: #16213e;
-  color: #888;
-  border: 1px solid #2a2a4a;
+  background: #e5e5e5;
+  color: #666;
+  border: 1px solid #e5e5e5;
   cursor: pointer;
   font-size: 13px;
   text-align: center;
@@ -50,15 +71,15 @@ h1 {
 }
 
 .tab.active {
-  background: #7c4dff;
+  background: #1d4ed8;
   color: #fff;
-  border-color: #7c4dff;
+  border-color: #1d4ed8;
 }
 
 /* Common */
 .cycle-info {
   font-size: 12px;
-  color: #aaa;
+  color: #666;
   text-align: center;
   margin-bottom: 8px;
 }
@@ -66,9 +87,9 @@ h1 {
 .month-select {
   width: 100%;
   padding: 6px 8px;
-  background: #16213e;
-  color: #e0e0e0;
-  border: 1px solid #2a2a4a;
+  background: #fff;
+  color: #333;
+  border: 1px solid #e5e5e5;
   border-radius: 6px;
   font-size: 13px;
   margin-bottom: 12px;
@@ -77,28 +98,28 @@ h1 {
 
 .month-select:focus {
   outline: none;
-  border-color: #7c4dff;
+  border-color: #1d4ed8;
 }
 
 .loading {
   text-align: center;
-  color: #7c4dff;
+  color: #999;
   padding: 20px;
   font-size: 14px;
 }
 
 .error {
-  color: #ff5252;
+  color: #dc2626;
   text-align: center;
   padding: 10px;
   font-size: 13px;
-  background: rgba(255, 82, 82, 0.1);
+  background: rgba(220, 38, 38, 0.08);
   border-radius: 6px;
 }
 
 .tier-label {
   font-size: 12px;
-  color: #7c4dff;
+  color: #1d4ed8;
   margin-bottom: 6px;
   font-weight: 600;
 }
@@ -114,30 +135,30 @@ h1 {
 .date-range input[type="date"] {
   flex: 1;
   padding: 6px 4px;
-  background: #16213e;
-  color: #e0e0e0;
-  border: 1px solid #2a2a4a;
+  background: #fff;
+  color: #333;
+  border: 1px solid #e5e5e5;
   border-radius: 4px;
   font-size: 12px;
 }
 
 .date-range input[type="date"]:focus {
   outline: none;
-  border-color: #7c4dff;
+  border-color: #1d4ed8;
 }
 
 .date-range input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(0.7);
+  filter: none;
 }
 
 .date-sep {
-  color: #aaa;
+  color: #999;
   font-size: 12px;
 }
 
 .query-btn {
   padding: 6px 14px;
-  background: #7c4dff;
+  background: #1d4ed8;
   color: #fff;
   border: none;
   border-radius: 4px;
@@ -147,7 +168,7 @@ h1 {
 }
 
 .query-btn:hover {
-  background: #651fff;
+  background: #1e40af;
 }
 
 /* Table */
@@ -158,11 +179,11 @@ table {
 }
 
 thead th {
-  background: #16213e;
-  color: #7c4dff;
+  background: #fff;
+  color: #666;
   padding: 8px 6px;
   font-weight: 600;
-  border-bottom: 2px solid #7c4dff;
+  border-bottom: 2px solid #1d4ed8;
 }
 
 thead th:first-child {
@@ -176,7 +197,8 @@ thead th:nth-child(3) {
 
 tbody td {
   padding: 6px;
-  border-bottom: 1px solid #2a2a4a;
+  border-bottom: 1px solid #e5e5e5;
+  background: #fff;
 }
 
 tbody td:first-child {
@@ -190,17 +212,18 @@ tbody td:nth-child(3) {
 
 tbody td.model-name {
   font-weight: 500;
-  color: #b0bec5;
+  color: #333;
 }
 
 tbody tr:hover {
-  background: rgba(124, 77, 255, 0.08);
+  background: #f5f5f5;
 }
 
 tfoot td {
   padding: 8px 6px;
   font-weight: 600;
-  border-top: 2px solid #2a2a4a;
+  border-top: 2px solid #e5e5e5;
+  background: #fff;
 }
 
 tfoot td:first-child {
@@ -210,30 +233,4 @@ tfoot td:first-child {
 tfoot td:nth-child(2),
 tfoot td:nth-child(3) {
   text-align: right;
-}
-
-/* Debug */
-.debug-toggle {
-  margin-top: 10px;
-  font-size: 11px;
-  color: #666;
-  cursor: pointer;
-  user-select: none;
-}
-
-.debug-toggle:hover {
-  color: #7c4dff;
-}
-
-.debug-json {
-  margin-top: 4px;
-  padding: 8px;
-  background: #111;
-  color: #888;
-  font-size: 10px;
-  border-radius: 4px;
-  max-height: 300px;
-  overflow: auto;
-  white-space: pre-wrap;
-  word-break: break-all;
 }
