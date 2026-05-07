@@ -1,5 +1,7 @@
 # Cursor Usage Viewer
 
+**中文** | **[English](./README_EN.md)**
+
 非官方工具，与 Cursor 官方无任何关联。
 
 Chrome 浏览器扩展，查看 Cursor 各 AI 模型的用量统计。支持月度和天维度切换、历史月份查看——解决了官方面板无法切换月份的问题。

@@ -1,5 +1,7 @@
 # Cursor Usage Viewer
 
+**[中文](./README.md)** | **English**
+
 Unofficial tool. Not affiliated with Cursor.
 
 A Chrome extension for viewing per-model AI usage statistics on Cursor. Supports monthly and daily views, with historical month navigation — solves the problem that the official dashboard cannot switch months.
