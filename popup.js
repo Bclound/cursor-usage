@@ -18,6 +18,13 @@ const i18n = {
     requestFailed: '请求失败',
     currentMonth: '（当前）',
     tierLabel: 'Pro 计划包含',
+    cursorModels: 'Cursor 模型',
+    otherModels: '其他模型',
+    used: '已用',
+    usagePct: '用量',
+    estimatedTotal: '预估总额',
+    guaranteed: '保障额度',
+    na: 'N/A',
   },
   en: {
     tabMonthly: 'Monthly',
@@ -35,6 +42,13 @@ const i18n = {
     requestFailed: 'Request failed',
     currentMonth: '(current)',
     tierLabel: 'Pro plan includes',
+    cursorModels: 'Cursor Models',
+    otherModels: 'Other Models',
+    used: 'Used',
+    usagePct: 'Usage',
+    estimatedTotal: 'Estimated Total',
+    guaranteed: 'Guaranteed',
+    na: 'N/A',
   }
 };
 
@@ -57,6 +71,7 @@ function t(key) {
 
 // --- State ---
 let currentBillingStart = null;
+let currentPlan = null;
 let dailyLoaded = false;
 
 // --- Utility Functions ---
@@ -135,6 +150,31 @@ function calcModelTotalTokens(agg) {
     + parseInt(agg.outputTokens || '0')
     + parseInt(agg.cacheWriteTokens || '0')
     + parseInt(agg.cacheReadTokens || '0');
+}
+
+function formatMoney(v) {
+  return '$' + Number(v).toFixed(2);
+}
+
+function formatPct(v) {
+  return Number(v).toFixed(2) + '%';
+}
+
+function computeQuota(usageData, plan) {
+  const n = (v) => Number(v || 0);
+  const rows = (usageData.aggregations || [])
+    .filter(x => x.modelIntent && [1, 2].includes(x.tier))
+    .map(x => ({ tier: x.tier, cost: n(x.totalCents) / 100 }));
+  const sum = (tier) => rows.filter(x => x.tier === tier).reduce((a, x) => a + x.cost, 0);
+  const firstUsed = sum(2);
+  const otherUsed = sum(1);
+  if (!plan) return { firstUsed, otherUsed };
+
+  const autoPct = n(plan.autoPercentUsed);
+  const apiPct = n(plan.apiPercentUsed);
+  const guaranteed = n(plan.limit) / 100;
+  const firstTotal = autoPct > 0 && autoPct < 100 ? firstUsed * 100 / autoPct : null;
+  return { firstUsed, otherUsed, autoPct, apiPct, guaranteed, firstTotal };
 }
 
 // --- API Fetch Functions ---
@@ -364,6 +404,57 @@ function renderTable(panel, usageData) {
   table.style.display = 'table';
 }
 
+function renderQuota(q) {
+  const el = document.getElementById('quota-summary');
+  el.innerHTML = '';
+
+  function card(title, rows, pct) {
+    const wrap = document.createElement('div');
+    wrap.className = 'quota-card';
+    const h = document.createElement('div');
+    h.className = 'quota-title';
+    h.textContent = title;
+    wrap.appendChild(h);
+    for (const [k, v] of rows) {
+      const row = document.createElement('div');
+      row.className = 'quota-row';
+      const left = document.createElement('span');
+      left.textContent = k;
+      const right = document.createElement('span');
+      right.textContent = v;
+      row.append(left, right);
+      wrap.appendChild(row);
+    }
+    if (pct != null) {
+      const bar = document.createElement('div');
+      bar.className = 'quota-bar';
+      const fill = document.createElement('div');
+      fill.className = 'quota-bar-fill' + (pct >= 100 ? ' over' : pct >= 80 ? ' warn' : '');
+      fill.style.width = Math.min(pct, 100) + '%';
+      bar.appendChild(fill);
+      wrap.appendChild(bar);
+    }
+    return wrap;
+  }
+
+  const firstRows = [[t('used'), formatMoney(q.firstUsed)]];
+  if (q.autoPct != null) {
+    firstRows.push([t('usagePct'), formatPct(q.autoPct)]);
+    firstRows.push([t('estimatedTotal'), q.firstTotal == null ? t('na') : formatMoney(q.firstTotal)]);
+  }
+
+  const otherRows = [];
+  if (q.guaranteed != null) otherRows.push([t('guaranteed'), formatMoney(q.guaranteed)]);
+  otherRows.push([t('used'), formatMoney(q.otherUsed)]);
+  if (q.apiPct != null) otherRows.push([t('usagePct'), formatPct(q.apiPct)]);
+
+  el.append(
+    card(t('cursorModels'), firstRows, q.autoPct),
+    card(t('otherModels'), otherRows, q.apiPct)
+  );
+  el.style.display = 'grid';
+}
+
 // --- Monthly Logic ---
 function buildMonthSelector(billingStart) {
   const select = document.getElementById('month-select');
@@ -386,12 +477,14 @@ async function loadMonthlyUsage(startDateMs) {
   const errorEl = document.getElementById('monthly-error');
   const tableEl = document.getElementById('monthly-table');
   const tierLabelEl = document.getElementById('monthly-tier-label');
+  const quotaEl = document.getElementById('quota-summary');
 
   loadingEl.textContent = t('loading');
   loadingEl.style.display = 'block';
   errorEl.style.display = 'none';
   tableEl.style.display = 'none';
   tierLabelEl.style.display = 'none';
+  quotaEl.style.display = 'none';
 
   try {
     const currentCycleMs = new Date(currentBillingStart).getTime();
@@ -409,6 +502,8 @@ async function loadMonthlyUsage(startDateMs) {
       }
     }
 
+    const isCurrent = startDateMs === currentCycleMs;
+    renderQuota(computeQuota(usageData, isCurrent ? currentPlan : null));
     renderTable('monthly', usageData);
   } catch (err) {
     errorEl.textContent = err.message;
@@ -553,6 +648,7 @@ async function init() {
     if (summaryData.error) throw new Error(summaryData.error);
 
     currentBillingStart = summaryData.billingCycleStart;
+    currentPlan = summaryData.individualUsage?.plan || null;
     cycleInfoEl.textContent = `${formatDate(summaryData.billingCycleStart)} - ${formatDate(summaryData.billingCycleEnd)}`;
 
     buildMonthSelector(summaryData.billingCycleStart);

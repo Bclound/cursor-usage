@@ -8,6 +8,7 @@ A Chrome extension for viewing per-model AI usage statistics on Cursor. Supports
 
 ## Features
 
+- Quota summary: current-cycle used amount, usage %, and estimated total for Cursor Models / Other Models
 - Monthly view: current and past 24 billing cycles, aggregated by model
 - Daily view: select any date range for per-day usage details (defaults to today)
 - Table display: model / tokens / requests matching the official format
